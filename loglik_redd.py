@@ -6,7 +6,7 @@ import numpy.polynomial.polynomial as poly
 from scipy.integrate import quad
 from scipy.stats import gamma
 
-log_bmax = 1
+log_bmax = 1.
 
 def myprior(cube, ndim, nparams):
     plind = 8.*cube[0] -4.
