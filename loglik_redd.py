@@ -5,18 +5,20 @@ import pdb
 import numpy.polynomial.polynomial as poly
 from scipy.integrate import quad
 from scipy.stats import gamma
+from scipy.stats import loggamma
+import scipy.special as special
 
 log_bmax = 1.
 
 def myprior(cube, ndim, nparams):
     plind = 8.*cube[0] -4.
-    log_k = 12*cube[1] - 6.
-    log_bmin = -12.*cube[2] - 4
-    a = 6*cube[3] 
+    log_k = 12.*cube[1] - 6.
+    log_bmin = -12.*cube[2] - 4.
+    a = 6.*cube[3] 
     
     k = 10.**log_k
     f = np.linspace(0, 19, 20)
-    b = 10**(log_bmin + (log_bmax - log_bmin)*0.05*f)
+    b = 10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)
     norm = b**(plind+1)
 
     
@@ -35,7 +37,7 @@ def myloglike(cube, ndim, nparams):
     
     f = np.linspace(0, 19, 20)
     nsam = redd.size
-    b = 10**(log_bmin + (log_bmax - log_bmin)*0.05*f)
+    b = 10.**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)     
     norm = b**(plind+1)
     UL = 1e-3
     
@@ -49,11 +51,11 @@ def myloglike(cube, ndim, nparams):
     #First part of likelihood function:
     lik = []
     pdf = []
-    pdf1 = np.zeros( (redd.size, b.size) )
+    pdf1 = np.zeros( (det.size, b.size) )
     #calculate the pdf of 1 det, for all bs
     
     for j in range(b.size):
-        pdf1[:,j] = k* norm[j] * gamma.pdf(redd, a, 0, b[j])
+        pdf1[:,j] = k * norm[j] * gamma.pdf(det, a, 0, b[j])
         
     lik1 = np.sum(pdf1, axis = 1)
     loglik1 = np.log(lik1)
@@ -70,15 +72,15 @@ def myloglike(cube, ndim, nparams):
     #cdf_est = 1 - (ndet / nsam)
     for i in range(b.size):
         #cdf = 1 - (ligf(a, b[i]*1e-3)/math.gamma(a))
-        cdfval = norm[i]*(1-gamma.cdf(UL, a, 0, b[i]))/np.sum(norm)
+        cdfval = (norm[i]*(1 - gamma.cdf(UL, a, 0, b[i])))
         cdf.append(cdfval)
     
     int2 = np.sum(cdf)
-    lik2 =k*int2
-    lik2 = np.sum(cdf)
+    lik2 = k*int2
+    
     
     #Likelihood
-    ln_l = np.sum(k*lik1 - nsam*lik2)
+    ln_l = np.sum(loglikT - (nsam*lik2))
     return ln_l
 
 #Name and number of parameters our problem has:
