@@ -70,20 +70,15 @@ def myloglike(cube, ndim, nparams):
     #cdf_est = 1 - (ndet / nsam)
     for i in range(b.size):
         #cdf = 1 - (ligf(a, b[i]*1e-3)/math.gamma(a))
-        cdfval = k*norm[i]*(1 - gamma.cdf(UL, a, 0, b[i])) 
+        cdfval = norm[i]*(1-gamma.cdf(UL, a, 0, b[i]))/np.sum(norm)
         cdf.append(cdfval)
     
-
-    cdf = (np.array(cdf) / np.sum(norm))
-    print np.sum(cdf)
-    quit()
-    
-    #int2 = np.sum(cdf)
-    #lik2 =k*int2
+    int2 = np.sum(cdf)
+    lik2 =k*int2
     lik2 = np.sum(cdf)
     
     #Likelihood
-    ln_l = np.sum(lik1 - nsam*lik2)
+    ln_l = np.sum(k*lik1 - nsam*lik2)
     return ln_l
 
 #Name and number of parameters our problem has:
