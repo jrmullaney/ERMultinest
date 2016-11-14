@@ -11,15 +11,15 @@ import scipy.special as special
 log_bmax = 1.
 
 def myprior(cube, ndim, nparams):
-    plind = 8.*cube[0] -4.
+    plind = 2.*cube[0] - 1. 
     log_k = 12.*cube[1] - 6.
-    log_bmin = -12.*cube[2] - 4.
+    log_bmin = -12.*cube[2] 
     a = 6.*cube[3] 
     
     k = 10.**log_k
     f = np.linspace(0, 19, 20)
     b = 10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)
-    norm = b**(plind+1)
+    norm = b**(plind)
 
     
     cube[0] = plind
@@ -38,7 +38,7 @@ def myloglike(cube, ndim, nparams):
     f = np.linspace(0, 19, 20)
     nsam = redd.size
     b = 10.**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)     
-    norm = b**(plind+1)
+    norm = b**(plind)
     UL = 1e-3
     
     #Detected sample:
