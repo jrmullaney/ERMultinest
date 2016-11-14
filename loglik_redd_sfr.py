@@ -13,19 +13,21 @@ log_bmax = 1.
 def myprior(cube, ndim, nparams):
     plind = 2.*cube[0] - 1. 
     log_k = 12.*cube[1] - 6.
-    log_bmin = -12.*cube[2] 
-    a = 6.*cube[3] 
+    log_bmin = -16.*cube[2] 
+    alpha = 12.*cube[3] - 6.
+    beta = 12.*cube[4] - 6
     
     k = 10.**log_k
     f = np.linspace(0, 19, 20)
     b = 10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)
     norm = b**(plind)
-
+    a = alpha * ssfr + beta
     
     cube[0] = plind
     cube[1] = k
     cube[2] = log_bmin
-    cube[3] = a
+    cube[3] = alpha
+    cube[4] = beta
 
 def myloglike(cube, ndim, nparams):
 
@@ -33,31 +35,32 @@ def myloglike(cube, ndim, nparams):
     plind = cube[0]
     k = cube[1]
     log_bmin = cube[2]
-    a = cube[3]
-    
+    alpha = cube[3]
+    beta = cube[4]
+
     f = np.linspace(0, 19, 20)
-    nsam = redd.size
+    nsam = data.size
     b = 10.**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)     
     norm = b**(plind)
-    UL = 1e-3
+      
     
-    #Detected sample:
-    o = np.where(redd >= UL)
-    det = redd[o]
-    ndet = det.size
-    lndet = np.log(det)
-    av_lndet = np.mean(lndet)
-
+   
+    
+    a = alpha * ssfr + beta
     #First part of likelihood function:
     lik = []
     pdf = []
-    pdf1 = np.zeros( (det.size, b.size) )
+    pdf1 = np.zeros( (redd.size, b.size) )
     #calculate the pdf of 1 det, for all bs
     
     for j in range(b.size):
-        pdf1[:,j] = k * norm[j] * gamma.pdf(det, a, 0, b[j])
+        pdf1[:,j] = k * norm[j] * gamma.pdf(redd, a, 0, b[j])
+        pdf1[np.isnan(pdf1)] = 0
+        
         
     lik1 = np.sum(pdf1, axis = 1)
+    lik1 = lik1[lik1 > 0]
+    
     loglik1 = np.log(lik1)
     loglikT = np.sum(loglik1)
     
@@ -77,6 +80,7 @@ def myloglike(cube, ndim, nparams):
     
     int2 = np.sum(cdf)
     lik2 = k*int2
+
     
     
     #Likelihood
@@ -84,18 +88,28 @@ def myloglike(cube, ndim, nparams):
     return ln_l
 
 #Name and number of parameters our problem has:
-parameters = ['plind', 'log_k', 'log_bmin', 'a']
+parameters = ['plind', 'log_k', 'log_bmin', 'alpha', 'beta']
 n_params = len(parameters)
 
 #Read the sampled data
-data = np.loadtxt('gamsample1.txt')
-redd = data
+data = np.loadtxt('SSFR_REDD.txt')
+
+#Detected sample:
+UL = 1e-3
+o = np.where(data[:,1] >= UL)
+det = data[o]
+redd = det[:,1]
+ssfr = det[:,0]
+ndet = ssfr.size
+nsam = data.size / 2
+
+
 
 #Run MultiNest
-pymultinest.run(myloglike, myprior, n_params, importance_nested_sampling = False, resume = False, verbose = True, sampling_efficiency = 'model', n_live_points = 500, outputfiles_basename='chains/PL_redd-')
+pymultinest.run(myloglike, myprior, n_params, importance_nested_sampling = False, resume = False, verbose = True, sampling_efficiency = 'model', n_live_points = 500, outputfiles_basename='chains/PL_redd_ssfr-')
 
 #Analyse the results and plot the marginals
-ana = pymultinest.Analyzer(n_params = n_params, outputfiles_basename='chains/PL_redd-')
+ana = pymultinest.Analyzer(n_params = n_params, outputfiles_basename='chains/PL_redd_ssfr-')
 
 import matplotlib.pyplot as plt
 plt.clf()
@@ -122,5 +136,5 @@ for i in range(n_params):
 		plt.xlabel(parameters[i])
 		plt.ylabel(parameters[j])
 
-plt.savefig("chains/marginals_multinest_redd.pdf") #, bbox_inches='tight')
+plt.savefig("chains/marginals_multinest_redd_ssfr.pdf") #, bbox_inches='tight')
 #show("chains/marginals_multinest.pdf")
