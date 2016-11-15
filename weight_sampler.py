@@ -11,8 +11,9 @@ plind = 0.
 log_k = 0.
 log_bmin = -6.
 alpha = 3
+log_bmax = 1
 
-ytot, yvals, b = combgam(x, plind, log_k, log_bmin, alpha)
+ytot, yvals, b = combgam(x, plind, log_k, log_bmin, log_max, alpha)
 
 
 
@@ -29,7 +30,7 @@ plt.subplot(131)
 plt.plot(x, ytot)
 plt.yscale('log')
 plt.xscale('log')
-plt.ylim(1e-8,10)
+
 
 
 

@@ -3,7 +3,7 @@ from combgam import combgam
 import matplotlib.pyplot as plt
 x = np.logspace(-6,3,1000)
 
-plind = 0.
+plind = 1.
 log_k = 0.
 log_bmin = -6.
 alpha = 3.
@@ -21,6 +21,7 @@ weights = yvals/np.sum(yvals)
 def gamma_sampler(alpha, b, n, plind, log_k):
     sampled = []
     ignored = []
+    bs = []
     for i in range(n):
         bstar = np.random.choice(b, p = weights)
         x = np.random.gamma(alpha, bstar)
@@ -29,9 +30,10 @@ def gamma_sampler(alpha, b, n, plind, log_k):
             ignored.append(x)
         else:
             sampled.append(x)
-    return (sampled, ignored)
+            bs.append(bstar)
+    return (sampled, ignored, bs)
 
-xvals, ignoredxvals = gamma_sampler(alpha, b, 5000, plind, log_k)
+xvals, ignoredxvals, bs = gamma_sampler(alpha, b, 5000, plind, log_k)
 
 #print ignoredxvals
 plt.subplot(122)

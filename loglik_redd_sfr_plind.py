@@ -9,53 +9,43 @@ from scipy.stats import loggamma
 import scipy.special as special
 
 log_bmax = 1.
+log_bmin = -6
+a = 3
 
 def myprior(cube, ndim, nparams):
-    plind = 6.*cube[0] 
-    log_k = 12.*cube[1] - 6.
-    log_bmin = -20.*cube[2] 
-    alpha = 12.*cube[3]
-    beta = 12.*cube[4]
+     
+    log_k = 12.*cube[0] - 6.
+    alpha = 12.*cube[1] - 6.
+    beta = 12.*cube[2] - 6
     
     k = 10.**log_k
-    f = np.linspace(0, 19, 20)
-    b = 10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)
-    norm = b ** (plind)
-    a = alpha * ssfr + beta 
-    
-    
-    cube[0] = plind
-    cube[1] = k
-    cube[2] = log_bmin
-    cube[3] = alpha
-    cube[4] = beta
+      
+    cube[0] = k
+    cube[1] = alpha
+    cube[2] = beta
 
 def myloglike(cube, ndim, nparams):
 
     #Model Parameters
-    plind = cube[0]
-    k = cube[1]
-    log_bmin = cube[2]
-    alpha = cube[3]
-    beta = cube[4]
+    
+    k = cube[0]
+    alpha = cube[1]
+    beta = cube[2]
 
-    f = np.linspace(0, 19, 20)
+    
     nsam = data.size
-    b = 10.**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)     
-    norm = b ** (plind)
-    a = alpha * ssfr + beta
-      
+   
+
+    #Calculating the norm 
+
+    plind = alpha * ssfr + beta
+    
     
     #First part of likelihood function:
-    lik = []
-    pdf = []
-    pdf1 = np.zeros( (redd.size, b.size) )
     
-    #calculate the pdf of 1 det, for all bs
     
-    for j in range(b.size):
-        pdf1[:,j] = k * norm[j] * gamma.pdf(redd, a, 0, b[j])
-               
+         
+        
         
     lik1 = np.sum(pdf1, axis = 1)
     lik1 = lik1[lik1 > 0]
@@ -66,8 +56,7 @@ def myloglike(cube, ndim, nparams):
             #a = ndet*np.log(k) + np.log(np.sum(norm[i])) + np.log(np.sum(gamma.pdf(det, a, 0, b[i]))))
         #lik.append(a)
            
-    
-      
+ 
     
     #For the second part, need to integrate:
     cdf = []
@@ -101,8 +90,29 @@ redd = det[:,1]
 ssfr = det[:,0]
 ndet = ssfr.size
 nsam = data.size / 2
+redd = redd[0:4]
+ssfr = ssfr[0:3]
 
+f = np.linspace(0, 19, 20)
+b = 10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)  
+b = b[10:12]
 
+pdf2d = np.ndarray( (redd.size, b.size) )                         
+#calculate the pdf of 1 det, for all bs
+for j in range(b.size):
+    pdf2d[:,j] = gamma.pdf(redd, a, 0, b[j])
+
+pdf2d = pdf2d[np.newaxis, :, :]
+pdf3d = np.tile(pdf2d, (ssfr.size, 1, 1))
+norm3d = np.zeros( (ssfr.size, redd.size, b.size) )
+ssfr = ssfr[:, np.newaxis, np.newaxis]
+ssfr3d = np.tile(ssfr, (1, redd.size, b.size))
+redd = redd[np.newaxis, :, np.newaxis]
+redd3d = np.tile(redd, (ssfr.size, 1, b.size))
+
+print redd3d.shape
+print redd3d
+quit()
 
 #Run MultiNest
 pymultinest.run(myloglike, myprior, n_params, importance_nested_sampling = False, resume = False, verbose = True, sampling_efficiency = 'model', n_live_points = 500, outputfiles_basename='chains/PL_redd_ssfr-')

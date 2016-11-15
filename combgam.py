@@ -21,7 +21,7 @@ def combgam(x, plind, log_k, log_bmin, log_bmax, alpha):
     ytot = 0.*x
     f = np.linspace(0, 19, 20)
     b = 10**(log_bmin + (log_bmax - log_bmin)* 0.05 *f)
-    norm = b**(plind+1)
+    norm = b**(plind)
     k = 10**log_k
     yvals = []
     
