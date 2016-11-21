@@ -11,8 +11,8 @@ log_k = 0.
 log_bmin = -6.
 a = 1
 log_bmax = 1.
-alpha = 0.05
-beta = 0.05
+alpha = 0.0
+beta = -0.5
 data = np.loadtxt('SSFR_REDD.txt')
 ssfr = data[:,0]
 f = np.linspace(0, 19, 20)
@@ -51,6 +51,7 @@ new_vals = np.squeeze(new_vals)
 
 plt.hist(new_vals, bins = 10**np.linspace(-6,3,100))
 plt.xscale('log')
+plt.yscale('log')
 plt.show()
 
 datafile_path = "/local/php16lpg/james_code/plind_samp.txt"

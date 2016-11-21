@@ -17,7 +17,7 @@ b = np.array(10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f))
 
 def myprior(cube, ndim, nparams):
      
-    log_k = 18.*cube[0] - 9.
+    log_k = 50.*cube[0] - 25.
     alpha = 4. * cube[1] -2.  
     beta = 4. * cube[2] -2.
     
@@ -35,23 +35,23 @@ def myloglike(cube, ndim, nparams):
     alpha = cube[1]
     beta = cube[2]
     
-    
-
     #Calculating the norm pdfs/cdfs for each galaxy
     
-    plind = alpha * ssfr2d + beta
-
-    norm2d = b2d ** (plind)
-    lognorm2d = np.log(b2d) * plind    
-    logk = np.log(k)
+    pplind = alpha * ssfr2d + beta
+    cplind = alpha * sam_ssfr2d + beta
     
-    norm_pdf = norm2d * pdf
+    pnorm2d = pb2d ** pplind
+    cnorm2d = cb2d ** cplind
+    
+    #lognorm2d = np.log(b2d) * plind    
+    #logk = np.log(k)
+    
+    norm_pdf = pnorm2d * pdf2d
     sum_norm_pdf = np.sum(norm_pdf, axis = 0)        
     
-    norm_cdf =  norm2d * cdf
+    norm_cdf =  cnorm2d * cdf2d
     sum_norm_cdf = np.sum(norm_cdf, axis = 0)
 
-   
     #First part of log lik
 
     lik1 = np.log(k * sum_norm_pdf)
@@ -80,35 +80,32 @@ parameters = ['log_k', 'alpha', 'beta']
 n_params = len(parameters)
 
 #Read the sampled data
-data = np.loadtxt('SSFR_REDD.txt')
+data = np.loadtxt('plind_samp.txt')
+data = data[0:2000,:]
+sam_ssfr = data[:,0]
+nsam = sam_ssfr.size
 
 #Detected sample:
-UL = 1e-3
+UL = 1e-5
 o = np.where(data[:,1] >= UL)
 det = data[o]
 redd = det[:,1]
 ssfr = det[:,0]
 ndet = ssfr.size
-nsam = ssfr.size
-#redd = redd[0:2000]
-#ssfr = ssfr[0:2000]
 
-pdf = np.zeros((b.size, redd.size))
+pdf2d = np.zeros((b.size, redd.size))
 for i in range(redd.size):
     pdf_val = gamma.pdf(redd[i], a, 0, b)
-    pdf[:,i] = pdf_val
+    pdf2d[:,i] = pdf_val
 
-cdf = np.zeros((b.size, redd.size))
-for i in range(redd.size):
-    cdf_val = 1 - gamma.cdf(UL, a, 0, b)
-    cdf[:,i] = cdf_val
+cdf = 1 - gamma.cdf(UL, a, 0, b)
+cdf2d = np.tile(cdf[:,np.newaxis], (1, nsam))
 
-b = b[:,np.newaxis]
-b2d = np.tile(b, (1, ssfr.size))
+pb2d = np.tile(b[:,np.newaxis], (1, ndet))
+cb2d = np.tile(b[:,np.newaxis], (1, nsam))
 
-ssfr = ssfr[np.newaxis,:]
-ssfr2d = np.tile(ssfr, (b.size, 1))
-
+ssfr2d = np.tile(ssfr[np.newaxis,:], (b.size, 1))
+sam_ssfr2d = np.tile(sam_ssfr[np.newaxis,:], (b.size, 1))
 
 #Run MultiNest
 pymultinest.run(myloglike, myprior, n_params, importance_nested_sampling = False, resume = False, verbose = True, sampling_efficiency = 'model', n_live_points = 500, outputfiles_basename='chains/PL_twogal_redd_ssfr-')
