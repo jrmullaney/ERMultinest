@@ -9,16 +9,17 @@ from scipy.stats import loggamma
 import scipy.special as special
 
 log_bmax = 1.
-log_bmin = -6
-a = 3
+log_bmin = -6.
+a = 1.
 f = np.linspace(0, 19, 20)
-b = 10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)
+b = np.array(10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f))
+
 
 def myprior(cube, ndim, nparams):
      
-    log_k = 12.*cube[0] - 6.
-    alpha = 2.*cube[1] 
-    beta = 2.*cube[2] 
+    log_k = 18.*cube[0] - 9.
+    alpha = 4. * cube[1] -2.  
+    beta = 4. * cube[2] -2.
     
     k = 10.**log_k
       
@@ -33,30 +34,31 @@ def myloglike(cube, ndim, nparams):
     k = cube[0]
     alpha = cube[1]
     beta = cube[2]
-   
-    nsam = ssfr.size
+    
     
 
     #Calculating the norm pdfs/cdfs for each galaxy
     
-    norm = np.zeros((b.size, ssfr.size))
-    for i in range(ssfr.size):
-        plind = alpha * ssfr[i] + beta
-        norm_vals = b ** (plind)
-        norm[:,i] = norm_vals
+    plind = alpha * ssfr2d + beta
 
-    norm_pdf = k * norm * pdf
+    norm2d = b2d ** (plind)
+    lognorm2d = np.log(b2d) * plind    
+    logk = np.log(k)
+    
+    norm_pdf = norm2d * pdf
     sum_norm_pdf = np.sum(norm_pdf, axis = 0)        
+    
+    norm_cdf =  norm2d * cdf
+    sum_norm_cdf = np.sum(norm_cdf, axis = 0)
 
-    norm_cdf = k * norm * (1 - cdf)
-    sum_norm_cdf = np.sum(cdf, axis = 0)
+   
     #First part of log lik
 
-    lik1 = np.log(sum_norm_pdf)
+    lik1 = np.log(k * sum_norm_pdf)
     
     #For the second part, need to integrate:
 
-    lik2 = sum_norm_cdf
+    lik2 = k * np.sum(sum_norm_cdf)
     
     #cdf = []
     #cdf_est = 1 - (ndet / nsam)
@@ -68,10 +70,9 @@ def myloglike(cube, ndim, nparams):
     #int2 = np.sum(cdf)
     #lik2 = k*int2
 
-    
-    
+        
     #Likelihood
-    ln_l = np.sum(lik1 - nsam*lik2)
+    ln_l = np.sum(lik1 - (nsam * lik2))
     return ln_l
 
 #Name and number of parameters our problem has:
@@ -79,7 +80,7 @@ parameters = ['log_k', 'alpha', 'beta']
 n_params = len(parameters)
 
 #Read the sampled data
-data = np.loadtxt('REDD_SSFR_plind_samp.txt')
+data = np.loadtxt('SSFR_REDD.txt')
 
 #Detected sample:
 UL = 1e-3
@@ -88,23 +89,29 @@ det = data[o]
 redd = det[:,1]
 ssfr = det[:,0]
 ndet = ssfr.size
-nsam = data.size / 2
-redd = redd[0:2]
-ssfr = ssfr[0:2]
+nsam = ssfr.size
+#redd = redd[0:2000]
+#ssfr = ssfr[0:2000]
 
 pdf = np.zeros((b.size, redd.size))
 for i in range(redd.size):
     pdf_val = gamma.pdf(redd[i], a, 0, b)
     pdf[:,i] = pdf_val
+
 cdf = np.zeros((b.size, redd.size))
 for i in range(redd.size):
-    cdf_val = gamma.cdf(UL, a, 0, b)
+    cdf_val = 1 - gamma.cdf(UL, a, 0, b)
     cdf[:,i] = cdf_val
 
-    
+b = b[:,np.newaxis]
+b2d = np.tile(b, (1, ssfr.size))
+
+ssfr = ssfr[np.newaxis,:]
+ssfr2d = np.tile(ssfr, (b.size, 1))
+
+
 #Run MultiNest
 pymultinest.run(myloglike, myprior, n_params, importance_nested_sampling = False, resume = False, verbose = True, sampling_efficiency = 'model', n_live_points = 500, outputfiles_basename='chains/PL_twogal_redd_ssfr-')
-
 #Analyse the results and plot the marginals
 ana = pymultinest.Analyzer(n_params = n_params, outputfiles_basename='chains/PL_twogal_redd_ssfr-')
 

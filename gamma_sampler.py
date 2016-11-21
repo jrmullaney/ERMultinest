@@ -1,9 +1,10 @@
 import numpy as np
 from combgam import combgam
 import matplotlib.pyplot as plt
+
 x = np.logspace(-6,3,1000)
 
-plind = 1.
+plind = 0.
 log_k = 0.
 log_bmin = -6.
 alpha = 3.
@@ -31,6 +32,7 @@ def gamma_sampler(alpha, b, n, plind, log_k):
         else:
             sampled.append(x)
             bs.append(bstar)
+    sampled = np.array(sampled)        
     return (sampled, ignored, bs)
 
 xvals, ignoredxvals, bs = gamma_sampler(alpha, b, 5000, plind, log_k)

@@ -21,7 +21,7 @@ def combgam(x, plind, log_k, log_bmin, log_bmax, alpha):
     ytot = 0.*x
     f = np.linspace(0, 19, 20)
     b = 10**(log_bmin + (log_bmax - log_bmin)* 0.05 *f)
-    norm = b**(plind)
+    norm = b**(plind + 1)
     k = 10**log_k
     yvals = []
     
@@ -40,8 +40,6 @@ def combgam(x, plind, log_k, log_bmin, log_bmax, alpha):
         #plt.ylim(1e-5, 1e3)
     #plt.plot(x, ytot)
     return (ytot, yvals, b) 
-
-x = np.logspace(-6,3,1000)
 
 #plind = 0.
 #log_k = 0.
