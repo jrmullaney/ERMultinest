@@ -17,12 +17,11 @@ b = np.array(10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f))
 
 def myprior(cube, ndim, nparams):
      
-    log_k = 50.*cube[0] - 25.
+    k = 50.*cube[0] - 25.
     alpha = 4. * cube[1] -2.  
     beta = 4. * cube[2] -2.
     
-    k = 10.**log_k
-      
+          
     cube[0] = k
     cube[1] = alpha
     cube[2] = beta
@@ -40,8 +39,8 @@ def myloglike(cube, ndim, nparams):
     pplind = alpha * ssfr2d + beta
     cplind = alpha * sam_ssfr2d + beta
     
-    pnorm2d = pb2d ** pplind
-    cnorm2d = cb2d ** cplind
+    pnorm2d = pb2d ** pplind + 1
+    cnorm2d = cb2d ** cplind + 1
     
     #lognorm2d = np.log(b2d) * plind    
     #logk = np.log(k)
@@ -59,34 +58,23 @@ def myloglike(cube, ndim, nparams):
     #For the second part, need to integrate:
 
     lik2 = k * np.sum(sum_norm_cdf)
-    
-    #cdf = []
-    #cdf_est = 1 - (ndet / nsam)
-    #for i in range(b.size):
-        #cdf = 1 - (ligf(a, b[i]*1e-3)/math.gamma(a))
-    #    cdfval = (norm[i]*(1 - gamma.cdf(UL, a, 0, b[i])))
-    #    cdf.append(cdfval)
-    
-    #int2 = np.sum(cdf)
-    #lik2 = k*int2
-
-        
+          
     #Likelihood
     ln_l = np.sum(lik1 - (nsam * lik2))
     return ln_l
 
 #Name and number of parameters our problem has:
-parameters = ['log_k', 'alpha', 'beta']
+parameters = ['k', 'alpha', 'beta']
 n_params = len(parameters)
 
 #Read the sampled data
 data = np.loadtxt('plind_samp.txt')
-data = data[0:2000,:]
+data = data[0:500,:]
 sam_ssfr = data[:,0]
 nsam = sam_ssfr.size
 
 #Detected sample:
-UL = 1e-5
+UL = 1e-7
 o = np.where(data[:,1] >= UL)
 det = data[o]
 redd = det[:,1]

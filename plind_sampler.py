@@ -11,8 +11,8 @@ log_k = 0.
 log_bmin = -6.
 a = 1
 log_bmax = 1.
-alpha = 0.0
-beta = -0.5
+alpha = -0.06
+beta = 0.5
 data = np.loadtxt('SSFR_REDD.txt')
 ssfr = data[:,0]
 f = np.linspace(0, 19, 20)
@@ -20,16 +20,16 @@ b = 10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)
 
 
 
-def gamma_sampler(x, alpha, log_bmin, log_bmax, n, plind, log_k):
-    ytot, yvals, b = combgam(x, plind, log_k, log_bmin, log_bmax, alpha)
+def gamma_sampler(x, a, log_bmin, log_bmax, n, plind, log_k):
+    ytot, yvals, b = combgam(x, plind, log_k, log_bmin, log_bmax, a)
     weights = yvals/np.sum(yvals)
     sampled = []
     ignored = []
     bs = []
     for i in range(n):
         bstar = np.random.choice(b, p = weights)
-        x1 = np.random.gamma(alpha, bstar)
-        #x = np.random.gamma(alpha, 1/bstar)
+        x1 = np.random.gamma(a, bstar)
+        #x = np.random.gamma(a, 1/bstar)
         #if x1 < 1e-6:
             #ignored.append(x1)
         #else:
@@ -39,8 +39,8 @@ def gamma_sampler(x, alpha, log_bmin, log_bmax, n, plind, log_k):
     return (sampled, ignored, bs)
 
 new_vals = []
-for i in range (ssfr.size):
-    plind = alpha * ssfr[i] + beta
+for i in ssfr:
+    plind = alpha * i + beta
     xvals, _, _ = gamma_sampler(x, a, log_bmin, log_bmax, 1, plind, log_k)
     new_vals.append(xvals)
 
