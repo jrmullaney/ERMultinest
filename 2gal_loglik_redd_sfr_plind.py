@@ -1,7 +1,7 @@
 import pymultinest
-import math
+#import math
 import numpy as np
-import pdb
+#import pdb
 import numpy.polynomial.polynomial as poly
 from scipy.integrate import quad
 from scipy.stats import gamma
@@ -17,13 +17,12 @@ b = np.array(10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f))
 
 def myprior(cube, ndim, nparams):
      
-    log_k = 20.*cube[0] - 10.
-    alpha = 4. * cube[1] - 2.  
-    beta = 4. * cube[2] - 2.
+    log_k = -2 + 4.*cube[0]  #I think this needs to be log_k
+    alpha = -1. + 2.*cube[1]  
+    beta = -4. + 8.*cube[2]
     
-    k = 10 ** log_k
-    
-    cube[0] = log_k
+          
+    cube[0] = log_k 
     cube[1] = alpha
     cube[2] = beta
 
@@ -31,42 +30,41 @@ def myloglike(cube, ndim, nparams):
 
     #Model Parameters
     
-    log_k = cube[0]
+    k = 10.**cube[0]
     alpha = cube[1]
     beta = cube[2]
-    k = 10 ** log_k
+    
     #Calculating the norm pdfs/cdfs for each galaxy
     
     pplind = alpha * ssfr2d + beta
     cplind = alpha * sam_ssfr2d + beta
     
-    pnorm2d = pb2d ** (pplind+1.)
-    pnorm2d = pnorm2d / np.sum(pnorm2d)
-    cnorm2d = cb2d ** (cplind+1.) 
-    cnorm2d = cnorm2d / np.sum(cnorm2d)
+    pnorm2d = pb2d ** (pplind)
+    cnorm2d = cb2d ** (cplind)
+
+    pn = np.sum(pnorm2d, axis=0)
+    cn = np.sum(cnorm2d, axis=0)
+    pn = np.tile(pn[np.newaxis,:],(b.size,1))
+    cn = np.tile(cn[np.newaxis,:],(b.size,1))
+    
+    pnorm2d = pnorm2d/pn
+    cnorm2d = cnorm2d/cn
     
     #lognorm2d = np.log(b2d) * plind    
     #logk = np.log(k)
     
     norm_pdf = pnorm2d * pdf2d
-    sum_norm_pdf = np.sum(norm_pdf, axis = 0)
-    #sum_norm_pdf = sum_norm_pdf / np.sum(sum_norm_pdf)
-   
-    #prod_pdf = np.prod(pdfsum)
-    
+    sum_norm_pdf = np.sum(norm_pdf, axis = 0)        
     
     norm_cdf =  cnorm2d * cdf2d
     sum_norm_cdf = np.sum(norm_cdf, axis = 0)
-    #sum_norm_cdf = sum_norm_cdf / np.sum(sum_norm_cdf)
-
+    
     #First part of log lik
-
     lik1 = np.log(k * sum_norm_pdf)
     
     #For the second part, need to integrate:
-
     lik2 = k * np.sum(sum_norm_cdf)
-          
+    
     #Likelihood
     ln_l = np.sum(lik1) - lik2
     return ln_l
@@ -77,12 +75,12 @@ n_params = len(parameters)
 
 #Read the sampled data
 data = np.loadtxt('plind_samp.txt')
-data = data[0:500,:]
+data = data[0:2000,:]
 sam_ssfr = data[:,0]
 nsam = sam_ssfr.size
 
 #Detected sample:
-UL = 1e-4
+UL = 1e-5
 o = np.where(data[:,1] >= UL)
 det = data[o]
 redd = det[:,1]
@@ -94,20 +92,13 @@ for i in range(redd.size):
     pdf_val = gamma.pdf(redd[i], a, 0, b)
     pdf2d[:,i] = pdf_val
 
-#pdfsum = []
-#for i in range(redd.size):
-#    pdfval = np.sum(gamma.pdf(redd[i], a, 0, b))
-#    pdfsum.append(pdfval)
-
 cdf = 1 - gamma.cdf(UL, a, 0, b)
 cdf2d = np.tile(cdf[:,np.newaxis], (1, nsam))
 
 pb2d = np.tile(b[:,np.newaxis], (1, ndet))
-
 cb2d = np.tile(b[:,np.newaxis], (1, nsam))
 
 ssfr2d = np.tile(ssfr[np.newaxis,:], (b.size, 1))
-
 sam_ssfr2d = np.tile(sam_ssfr[np.newaxis,:], (b.size, 1))
 
 #Run MultiNest

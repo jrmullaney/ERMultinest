@@ -9,10 +9,10 @@ x = np.logspace(-8,3,1000)
 #plind = 0
 log_k = 0.
 log_bmin = -6.
-a = 1.
+a = 3.
 log_bmax = 1.
-alpha = -0.06
-beta = 1.
+alpha = 0.05
+beta = -1.5
 data = np.loadtxt('SSFR_REDD.txt')
 ssfr = data[:,0]
 #ssfr = np.random.uniform(1.0, 1.5, 10000)
@@ -64,7 +64,7 @@ plt.xscale('log')
 plt.yscale('log')
 plt.show()
 
-datafile_path = "/local/php16lpg/james_code/plind_samp.txt"
+datafile_path = "plind_samp.txt"
 datafile_id = open(datafile_path, 'w+')
 
 data = np.array([ssfr, new_vals])
