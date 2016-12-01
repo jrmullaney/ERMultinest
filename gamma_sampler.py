@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 x = np.logspace(-6,3,1000)
 
-plind = 0.
+plind = -1.
 log_k = 0.
 log_bmin = -6.
 alpha = 3.
