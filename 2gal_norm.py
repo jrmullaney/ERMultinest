@@ -8,23 +8,22 @@ from scipy.stats import gamma
 from scipy.stats import loggamma
 import scipy.special as special
 from norm_function import norm_function
+import matplotlib.pyplot as plt
 
-
-log_bmax = 2.
+log_bmax = 5.
 log_bmin = -10.
-a = 1.
+a = 3.
 f = np.linspace(0, 19, 20)
-b = np.array(10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f))
-s = 5
+b = np.array(10.**(log_bmin + (log_bmax - log_bmin) * 0.05 * f))
 
 def myprior(cube, ndim, nparams):
      
     #I'm saying that p is bmin, q is bmax:
-    log_k = 10 * cube[0] - 5.
-    alpha = 4. * cube[1] - 2.  
-    beta = 4. * cube[2] - 2.
-    log_p = 3.*cube[3] - 7.
-    log_q = 4. * cube[4] - 1.
+    log_k = -2. + 4. * cube[0]
+    alpha = -2. + 4. * cube[1]  
+    beta  = -2. + 4. * cube[2]
+    log_p = -7. + 3. * cube[3]
+    log_q = -2. + 4. * cube[4]
     #s = cube[5]*10
     
     cube[0] = log_k
@@ -43,29 +42,25 @@ def myloglike(cube, ndim, nparams):
     beta = cube[2]
     log_p = cube[3]
     log_q = cube[4] 
-    #s = cube[5]
     
-    k = 10.** log_k
-    p = 10.** log_p
-    q = 10.** log_q
+    k = 10. ** log_k
+    p = 10. ** log_p
+    q = 10. ** log_q
     
-    #Subsetting according to parameters
-    pval2d = np.tile(val[:,np.newaxis], (1, ndet))
-    cval2d = np.tile(val[:,np.newaxis], (1, nsam))
-   
     #Calculating the norm pdfs/cdfs for each galaxy
     pplind = alpha * ssfr2d + beta
     cplind = alpha * sam_ssfr2d + beta
     
     #Normalise to give PL index:
-    pnorm2d = (pb2d ** (pplind))
-    cnorm2d = (cb2d ** (cplind))
+    pnorm2d = (pb2d ** pplind)
+    cnorm2d = (cb2d ** cplind)
 
     #Normalise to impose bmin and bmax:
-    pmm2d = (1./(1.+np.exp(-10.*(pb2d-p))))*\
-            (1./(1.+np.exp(-k*(pb2d-q))))
-    cmm2d = (1./(1.+np.exp(-10.*(cb2d-p))))*\
-            (1./(1.+np.exp(-k*(cb2d-q))))
+    pmm2d = (1./(1.+np.exp(-10.*(np.log10(pb2d)-log_p))))*\
+            (1./(1.+np.exp(-10.*(log_q-np.log10(pb2d)))))
+    cmm2d = (1./(1.+np.exp(-10.*(np.log10(cb2d)-log_p))))*\
+            (1./(1.+np.exp(-10.*(log_q-np.log10(cb2d)))))
+
     pnorm2d = pmm2d * pnorm2d
     cnorm2d = cmm2d * cnorm2d
     
@@ -86,7 +81,7 @@ def myloglike(cube, ndim, nparams):
     
     #econd part of log lik:
     lik2 = k * np.sum(sum_norm_cdf)
-          
+    
     #Likelihood
     ln_l = np.sum(lik1) - lik2
 
@@ -132,14 +127,12 @@ ssfr2d = np.tile(ssfr[np.newaxis,:], (b.size, 1))
 
 sam_ssfr2d = np.tile(sam_ssfr[np.newaxis,:], (b.size, 1))
 
-
-
 #Run MultiNest
 pymultinest.run(myloglike, myprior, n_params, importance_nested_sampling = False, resume = False, verbose = True, sampling_efficiency = 'model', n_live_points = 500, outputfiles_basename='chains/q_PL_twogal_redd_ssfr-')
 #Analyse the results and plot the marginals
 ana = pymultinest.Analyzer(n_params = n_params, outputfiles_basename='chains/q_PL_twogal_redd_ssfr-')
 
-import matplotlib.pyplot as plt
+
 plt.clf()
 
 # Here we will plot all the marginals and whatnot, just to show off
