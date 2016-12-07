@@ -19,11 +19,12 @@ s = 5
 
 def myprior(cube, ndim, nparams):
      
+    #I'm saying that p is bmin, q is bmax:
     log_k = 10 * cube[0] - 5.
     alpha = 4. * cube[1] - 2.  
     beta = 4. * cube[2] - 2.
-    log_p = 26.*cube[3] - 13.
-    log_q = 20. * cube[4] - 10.
+    log_p = 3.*cube[3] - 7.
+    log_q = 4. * cube[4] - 1.
     #s = cube[5]*10
     
     cube[0] = log_k
@@ -49,10 +50,6 @@ def myloglike(cube, ndim, nparams):
     q = 10.** log_q
     
     #Subsetting according to parameters
-    val = norm_function(np.log10(b), log_p, log_q, s)
-    #val1 = (np.log10(b) >= log_p)
-    #val2 = (np.log10(b) <= log_q)
-    #val = val1 * val2
     pval2d = np.tile(val[:,np.newaxis], (1, ndet))
     cval2d = np.tile(val[:,np.newaxis], (1, nsam))
    
@@ -60,35 +57,39 @@ def myloglike(cube, ndim, nparams):
     pplind = alpha * ssfr2d + beta
     cplind = alpha * sam_ssfr2d + beta
     
+    #Normalise to give PL index:
     pnorm2d = (pb2d ** (pplind))
+    cnorm2d = (cb2d ** (cplind))
+
+    #Normalise to impose bmin and bmax:
+    pmm2d = (1./(1.+np.exp(-10.*(pb2d-p))))*\
+            (1./(1.+np.exp(-k*(pb2d-q))))
+    cmm2d = (1./(1.+np.exp(-10.*(cb2d-p))))*\
+            (1./(1.+np.exp(-k*(cb2d-q))))
+    pnorm2d = pmm2d * pnorm2d
+    cnorm2d = cmm2d * cnorm2d
+    
+    #Normalise to 1:
     pnorm2d = pnorm2d / np.sum(pnorm2d, axis = 0)
-    cnorm2d = (cb2d ** (cplind)) 
     cnorm2d = cnorm2d / np.sum(cnorm2d, axis = 0)
+
+    #Apply normalisations to pdfs:
+    norm_pdf = pnorm2d * pdf2d
+    norm_cdf = cnorm2d * cdf2d
     
-    #lognorm2d = np.log(b2d) * plind    
-    #logk = np.log(k)
-    
-    norm_pdf = pnorm2d * pdf2d * pval2d
+    #Sum over the b's to give probability for each Edd:
     sum_norm_pdf = np.sum(norm_pdf, axis = 0)
-    #sum_norm_pdf = sum_norm_pdf / np.sum(sum_norm_pdf)
-   
-    #prod_pdf = np.prod(pdfsum)
-    
-    
-    norm_cdf =  cnorm2d * cdf2d * cval2d
     sum_norm_cdf = np.sum(norm_cdf, axis = 0)
-    #sum_norm_cdf = sum_norm_cdf / np.sum(sum_norm_cdf)
-
+    
     #First part of log lik
-
     lik1 = np.log(k * sum_norm_pdf)
     
-    #For the second part, need to integrate:
-
+    #econd part of log lik:
     lik2 = k * np.sum(sum_norm_cdf)
           
     #Likelihood
     ln_l = np.sum(lik1) - lik2
+
     return ln_l
 
 #Name and number of parameters our problem has:
