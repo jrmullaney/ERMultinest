@@ -10,20 +10,19 @@ import scipy.special as special
 from norm_function import norm_function
 import matplotlib.pyplot as plt
 
-log_bmax = 5.
 log_bmin = -10.
+log_bmax = 5.
 a = 3.
-f = np.linspace(0, 19, 20)
-b = np.array(10.**(log_bmin + (log_bmax - log_bmin) * 0.05 * f))
+b = np.logspace(log_bmin, log_bmax, 40.)
 
 def myprior(cube, ndim, nparams):
      
     #I'm saying that p is bmin, q is bmax:
     log_k = -2. + 4. * cube[0]
     alpha = -2. + 4. * cube[1]  
-    beta  = -2. + 4. * cube[2]
-    log_p = -7. + 3. * cube[3]
-    log_q = -2. + 4. * cube[4]
+    beta  = -3. + 6. * cube[2]
+    log_p = -10. + 5. * cube[3]
+    log_q = -3. + 6. * cube[4]
     #s = cube[5]*10
     
     cube[0] = log_k
@@ -42,7 +41,7 @@ def myloglike(cube, ndim, nparams):
     beta = cube[2]
     log_p = cube[3]
     log_q = cube[4] 
-    
+
     k = 10. ** log_k
     p = 10. ** log_p
     q = 10. ** log_q
@@ -56,10 +55,10 @@ def myloglike(cube, ndim, nparams):
     cnorm2d = (cb2d ** cplind)
 
     #Normalise to impose bmin and bmax:
-    pmm2d = (1./(1.+np.exp(-10.*(np.log10(pb2d)-log_p))))*\
-            (1./(1.+np.exp(-10.*(log_q-np.log10(pb2d)))))
-    cmm2d = (1./(1.+np.exp(-10.*(np.log10(cb2d)-log_p))))*\
-            (1./(1.+np.exp(-10.*(log_q-np.log10(cb2d)))))
+    pmm2d = (1./(1.+np.exp(-50.*(np.log10(pb2d)-log_p))))*\
+            (1./(1.+np.exp(-50.*(log_q-np.log10(pb2d)))))
+    cmm2d = (1./(1.+np.exp(-50.*(np.log10(cb2d)-log_p))))*\
+            (1./(1.+np.exp(-50.*(log_q-np.log10(cb2d)))))
 
     pnorm2d = pmm2d * pnorm2d
     cnorm2d = cmm2d * cnorm2d
@@ -71,7 +70,7 @@ def myloglike(cube, ndim, nparams):
     #Apply normalisations to pdfs:
     norm_pdf = pnorm2d * pdf2d
     norm_cdf = cnorm2d * cdf2d
-    
+
     #Sum over the b's to give probability for each Edd:
     sum_norm_pdf = np.sum(norm_pdf, axis = 0)
     sum_norm_cdf = np.sum(norm_cdf, axis = 0)
@@ -79,7 +78,7 @@ def myloglike(cube, ndim, nparams):
     #First part of log lik
     lik1 = np.log(k * sum_norm_pdf)
     
-    #econd part of log lik:
+    #Second part of log lik:
     lik2 = k * np.sum(sum_norm_cdf)
     
     #Likelihood
@@ -92,18 +91,17 @@ parameters = ['k', 'alpha', 'beta', 'log_p', 'log_q']
 n_params = len(parameters)
 
 #Read the sampled data
-data = np.loadtxt('qplind_samp.txt')
-data = data[0:500,:]
+data = np.loadtxt('plind_samp.txt')
+#data = data[0:500,:]
 sam_ssfr = data[:,0]
 nsam = sam_ssfr.size
 sam_redd = data[:,1]
 
 #Detected sample:
-UL = 1e-10
-o = np.where(data[:,1] >= UL)
-det = data[o]
-redd = det[:,1]
-ssfr = det[:,0]
+UL = 1e-3
+o = np.where(sam_redd >= UL)
+redd = sam_redd[o]
+ssfr = sam_ssfr[o]
 ndet = ssfr.size
 
 pdf2d = np.zeros((b.size, redd.size))
@@ -116,11 +114,10 @@ for i in range(redd.size):
 #    pdfval = np.sum(gamma.pdf(redd[i], a, 0, b))
 #    pdfsum.append(pdfval)
 
-cdf = 1 - gamma.cdf(UL, a, 0, b)
+cdf = 1. - gamma.cdf(UL, a, 0, b)
 cdf2d = np.tile(cdf[:,np.newaxis], (1, nsam))
 
 pb2d = np.tile(b[:,np.newaxis], (1, ndet))
-
 cb2d = np.tile(b[:,np.newaxis], (1, nsam))
 
 ssfr2d = np.tile(ssfr[np.newaxis,:], (b.size, 1))
@@ -128,9 +125,9 @@ ssfr2d = np.tile(ssfr[np.newaxis,:], (b.size, 1))
 sam_ssfr2d = np.tile(sam_ssfr[np.newaxis,:], (b.size, 1))
 
 #Run MultiNest
-pymultinest.run(myloglike, myprior, n_params, importance_nested_sampling = False, resume = False, verbose = True, sampling_efficiency = 'model', n_live_points = 500, outputfiles_basename='chains/q_PL_twogal_redd_ssfr-')
+pymultinest.run(myloglike, myprior, n_params, importance_nested_sampling = False, resume = False, verbose = True, sampling_efficiency = 'model', n_live_points = 500, outputfiles_basename='chains2/q_PL_twogal_redd_ssfr-')
 #Analyse the results and plot the marginals
-ana = pymultinest.Analyzer(n_params = n_params, outputfiles_basename='chains/q_PL_twogal_redd_ssfr-')
+ana = pymultinest.Analyzer(n_params = n_params, outputfiles_basename='chains2/q_PL_twogal_redd_ssfr-')
 
 
 plt.clf()
@@ -157,5 +154,5 @@ for i in range(n_params):
 		plt.xlabel(parameters[i])
 		plt.ylabel(parameters[j])
 
-plt.savefig("chains/q_marginals_multinest_twogal_redd_ssfr.pdf") #, bbox_inches='tight')
+plt.savefig("chains2/q_marginals_multinest_twogal_redd_ssfr.pdf") #, bbox_inches='tight')
 #show("chains/marginals_multinest.pdf")

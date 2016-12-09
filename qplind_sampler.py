@@ -6,22 +6,21 @@ from qcombgam import qcombgam
 import scipy.stats as stats
 from norm_function import norm_function
 
-x = np.logspace(-10,3,1000)
-#plind = 0
+x = np.logspace(-10,5,1000)
+
 log_k = 0.
 log_bmin = -10.
+log_bmax = 5.
 a = 3.
-log_bmax = 2.
+b = np.logspace(log_bmin, log_bmax, 40.)
+
 alpha = 0.06
 beta = -1.
 log_p = -6.
-log_q = 2.
+log_q = 1.
+
 data = np.loadtxt('SSFR_REDD.txt')
-#ssfr = data[:,0]
-ssfr = np.random.uniform(, 10000)
-f = np.linspace(0, 19, 20)
-b = 10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)
-s = 5
+ssfr = data[0:1999,0]
 
 #print np.min(ssfr)
 #print np.max(ssfr)
@@ -49,7 +48,7 @@ new_vals = []
 plindvals = []
 for i in range(ssfr.size):
     plind = alpha * ssfr[i] + beta
-    xvals, _, bs = gamma_sampler(x, a, log_bmin, log_bmax, 1, plind, log_k, log_p, log_q, s)
+    xvals, _, bs = gamma_sampler(x, a, log_bmin, log_bmax, 1, plind, log_k, log_p, log_q, -10.)
     #print xvals
     print i*100/ssfr.size, " % done"
     new_vals.append(xvals)

@@ -5,23 +5,18 @@ import matplotlib.pyplot as plt
 from combgam import combgam
 import scipy.stats as stats
 
-x = np.logspace(-8,3,1000)
-#plind = 0
-log_k = 0.
-log_bmin = -6.
-a = 3.
-log_bmax = 1.
-alpha = 0.05
-beta = -1.5
-data = np.loadtxt('SSFR_REDD.txt')
-ssfr = data[:,0]
-#ssfr = np.random.uniform(1.0, 1.5, 10000)
-f = np.linspace(0, 19, 20)
-b = 10**(log_bmin + (log_bmax - log_bmin) * 0.05 * f)
+x = np.logspace(-10.,5.,1000)
 
-#print np.min(ssfr)
-#print np.max(ssfr)
-#quit()
+log_k = 0.
+log_bmin = -7.
+log_bmax = 1.
+a = 3.
+b = np.logspace(log_bmin, log_bmax, 40.)
+
+alpha = 0.06
+beta = -0.5
+data = np.loadtxt('SSFR_REDD.txt')
+ssfr = data[0:1999,0]
 
 def gamma_sampler(x, a, log_bmin, log_bmax, n, plind, log_k):
     ytot, yvals, b = combgam(x, plind, log_k, log_bmin, log_bmax, a)
