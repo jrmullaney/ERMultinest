@@ -84,6 +84,9 @@ def myloglike(cube, ndim, nparams):
     #Likelihood
     ln_l = np.sum(lik1) - lik2
 
+    print ln_l
+    quit()
+    
     return ln_l
 
 #Name and number of parameters our problem has:
