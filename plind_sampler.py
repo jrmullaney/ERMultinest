@@ -10,11 +10,11 @@ x = np.logspace(-10.,5.,1000)
 log_k = 0.
 log_bmin = -7.
 log_bmax = 1.
-a = 3.
+a = 1.
 b = np.logspace(log_bmin, log_bmax, 40.)
 
-alpha = 0.06
-beta = -0.5
+alpha = 0.0
+beta = -0.2
 data = np.loadtxt('SSFR_REDD.txt')
 ssfr = data[0:1999,0]
 
@@ -65,6 +65,6 @@ datafile_id = open(datafile_path, 'w+')
 data = np.array([ssfr, new_vals])
 data = data.T
 
-np.savetxt(datafile_id, data, fmt=['%.10f','%.10f'])
+np.savetxt(datafile_id, data, fmt=['%.10e','%.10e'])
 
 datafile_id.close()

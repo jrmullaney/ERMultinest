@@ -8,11 +8,8 @@ from scipy.stats import gamma
 from scipy.stats import loggamma
 import scipy.special as special
 
-log_bmax = 1.
-log_bmin = -6.
 a = 1.
-f = np.linspace(0, 19, 20)
-b = np.array(10**(-10. + 15. * 0.05 * f))
+b = np.logspace(-10, 5, 30)
 
 def myprior(cube, ndim, nparams):
      
@@ -22,8 +19,8 @@ def myprior(cube, ndim, nparams):
     #bmax is high turnover
     log_k = -2 + 4.*cube[0]  #Normalisation
     beta = -4. + 8.*cube[1]  #PL index
-    log_bmin = -10 + 7*cube[2] #low turnover
-    log_bmax = -3 + 6*cube[3] #low turnover
+    log_bmin = -10 + 7*cube[2] #low turnover [-10,-3]
+    log_bmax = -3 + 6*cube[3] #high turnover [-3,3]
           
     cube[0] = log_k 
     cube[1] = beta
@@ -43,6 +40,8 @@ def myloglike(cube, ndim, nparams):
     cnorm2d = cb2d ** beta
     pnorm2d[np.log10(pb2d) > log_bmax] = 0.
     pnorm2d[np.log10(pb2d) < log_bmin] = 0.
+    cnorm2d[np.log10(cb2d) > log_bmax] = 0.
+    cnorm2d[np.log10(cb2d) < log_bmin] = 0.
     
     #Ensure the normalisations sum to 1:
     pn = np.sum(pnorm2d, axis=0)
@@ -81,7 +80,7 @@ sam = data[:,1]
 nsam = sam.size
 
 #Detected sample:
-UL = 1e-5*np.ones(nsam)
+UL = 10.**np.random.uniform(-6, -4, nsam)
 o = np.where(sam >= UL)
 redd = sam[o]
 ndet = redd.size
